@@ -1,0 +1,1282 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="This repository contains code samples and best practices from Google Cloud  Applied AI Engineering, focusing on building scalable and efficient AI systems on Google Cloud.">
+      
+      
+        <meta name="author" content="Applied AI Engineering, Google Cloud">
+      
+      
+        <link rel="canonical" href="https://googlecloudplatform.github.io/applied-ai-engineering-samples/genai-on-vertex-ai/gemini_2_0/gemini-multimodal-live-api-dev-guide/part_2_dev_api/chapter_05/">
+      
+      
+      
+      
+      <link rel="icon" href="../../../../../assets/aaie_favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.49">
+    
+    
+      
+        <title>Chapter 5: Gemini Live Audio Chat - Real-time Audio-to-Audio with WebSockets - Google Cloud Applied AI Engineering</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../../../assets/stylesheets/main.6f8fc17f.min.css">
+      
+        
+        <link rel="stylesheet" href="../../../../../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+  
+  
+    
+    
+  
+    
+    
+  
+    
+    
+  
+    
+    
+  
+    
+    
+  
+    
+    
+  
+    
+    
+  
+    
+    
+  
+    
+    
+  
+    
+    
+  
+    
+    
+  
+    
+    
+  
+  
+  <style>:root{--md-admonition-icon--note:url('data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M1 7.775V2.75C1 1.784 1.784 1 2.75 1h5.025c.464 0 .91.184 1.238.513l6.25 6.25a1.75 1.75 0 0 1 0 2.474l-5.026 5.026a1.75 1.75 0 0 1-2.474 0l-6.25-6.25A1.75 1.75 0 0 1 1 7.775m1.5 0c0 .066.026.13.073.177l6.25 6.25a.25.25 0 0 0 .354 0l5.025-5.025a.25.25 0 0 0 0-.354l-6.25-6.25a.25.25 0 0 0-.177-.073H2.75a.25.25 0 0 0-.25.25ZM6 5a1 1 0 1 1 0 2 1 1 0 0 1 0-2"/></svg>');--md-admonition-icon--abstract:url('data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M2.5 1.75v11.5c0 .138.112.25.25.25h3.17a.75.75 0 0 1 0 1.5H2.75A1.75 1.75 0 0 1 1 13.25V1.75C1 .784 1.784 0 2.75 0h8.5C12.216 0 13 .784 13 1.75v7.736a.75.75 0 0 1-1.5 0V1.75a.25.25 0 0 0-.25-.25h-8.5a.25.25 0 0 0-.25.25m13.274 9.537zl-4.557 4.45a.75.75 0 0 1-1.055-.008l-1.943-1.95a.75.75 0 0 1 1.062-1.058l1.419 1.425 4.026-3.932a.75.75 0 1 1 1.048 1.074M4.75 4h4.5a.75.75 0 0 1 0 1.5h-4.5a.75.75 0 0 1 0-1.5M4 7.75A.75.75 0 0 1 4.75 7h2a.75.75 0 0 1 0 1.5h-2A.75.75 0 0 1 4 7.75"/></svg>');--md-admonition-icon--info:url('data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8m8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13M6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75M8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2"/></svg>');--md-admonition-icon--tip:url('data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M3.499.75a.75.75 0 0 1 1.5 0v.996C5.9 2.903 6.793 3.65 7.662 4.376l.24.202c-.036-.694.055-1.422.426-2.163C9.1.873 10.794-.045 12.622.26 14.408.558 16 1.94 16 4.25c0 1.278-.954 2.575-2.44 2.734l.146.508.065.22c.203.701.412 1.455.476 2.226.142 1.707-.4 3.03-1.487 3.898C11.714 14.671 10.27 15 8.75 15h-6a.75.75 0 0 1 0-1.5h1.376a4.5 4.5 0 0 1-.563-1.191 3.84 3.84 0 0 1-.05-2.063 4.65 4.65 0 0 1-2.025-.293.75.75 0 0 1 .525-1.406c1.357.507 2.376-.006 2.698-.318l.009-.01a.747.747 0 0 1 1.06 0 .75.75 0 0 1-.012 1.074c-.912.92-.992 1.835-.768 2.586.221.74.745 1.337 1.196 1.621H8.75c1.343 0 2.398-.296 3.074-.836.635-.507 1.036-1.31.928-2.602-.05-.603-.216-1.224-.422-1.93l-.064-.221c-.12-.407-.246-.84-.353-1.29a2.4 2.4 0 0 1-.507-.441 3.1 3.1 0 0 1-.633-1.248.75.75 0 0 1 1.455-.364c.046.185.144.436.31.627.146.168.353.305.712.305.738 0 1.25-.615 1.25-1.25 0-1.47-.95-2.315-2.123-2.51-1.172-.196-2.227.387-2.706 1.345-.46.92-.27 1.774.019 3.062l.042.19.01.05c.348.443.666.949.94 1.553a.75.75 0 1 1-1.365.62c-.553-1.217-1.32-1.94-2.3-2.768L6.7 5.527c-.814-.68-1.75-1.462-2.692-2.619a3.7 3.7 0 0 0-1.023.88c-.406.495-.663 1.036-.722 1.508.116.122.306.21.591.239.388.038.797-.06 1.032-.19a.75.75 0 0 1 .728 1.31c-.515.287-1.23.439-1.906.373-.682-.067-1.473-.38-1.879-1.193L.75 5.677V5.5c0-.984.48-1.94 1.077-2.664.46-.559 1.05-1.055 1.673-1.353z"/></svg>');--md-admonition-icon--success:url('data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 0 1 .018-1.042.75.75 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0"/></svg>');--md-admonition-icon--question:url('data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8m8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13M6.92 6.085h.001a.749.749 0 1 1-1.342-.67c.169-.339.436-.701.849-.977C6.845 4.16 7.369 4 8 4a2.76 2.76 0 0 1 1.637.525c.503.377.863.965.863 1.725 0 .448-.115.83-.329 1.15-.205.307-.47.513-.692.662-.109.072-.22.138-.313.195l-.006.004a6 6 0 0 0-.26.16 1 1 0 0 0-.276.245.75.75 0 0 1-1.248-.832c.184-.264.42-.489.692-.661q.154-.1.313-.195l.007-.004c.1-.061.182-.11.258-.161a1 1 0 0 0 .277-.245C8.96 6.514 9 6.427 9 6.25a.61.61 0 0 0-.262-.525A1.27 1.27 0 0 0 8 5.5c-.369 0-.595.09-.74.187a1 1 0 0 0-.34.398M9 11a1 1 0 1 1-2 0 1 1 0 0 1 2 0"/></svg>');--md-admonition-icon--warning:url('data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M6.457 1.047c.659-1.234 2.427-1.234 3.086 0l6.082 11.378A1.75 1.75 0 0 1 14.082 15H1.918a1.75 1.75 0 0 1-1.543-2.575Zm1.763.707a.25.25 0 0 0-.44 0L1.698 13.132a.25.25 0 0 0 .22.368h12.164a.25.25 0 0 0 .22-.368Zm.53 3.996v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0M9 11a1 1 0 1 1-2 0 1 1 0 0 1 2 0"/></svg>');--md-admonition-icon--failure:url('data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M2.344 2.343za8 8 0 0 1 11.314 11.314A8.002 8.002 0 0 1 .234 10.089a8 8 0 0 1 2.11-7.746m1.06 10.253a6.5 6.5 0 1 0 9.108-9.275 6.5 6.5 0 0 0-9.108 9.275M6.03 4.97 8 6.94l1.97-1.97a.749.749 0 0 1 1.275.326.75.75 0 0 1-.215.734L9.06 8l1.97 1.97a.749.749 0 0 1-.326 1.275.75.75 0 0 1-.734-.215L8 9.06l-1.97 1.97a.749.749 0 0 1-1.275-.326.75.75 0 0 1 .215-.734L6.94 8 4.97 6.03a.75.75 0 0 1 .018-1.042.75.75 0 0 1 1.042-.018"/></svg>');--md-admonition-icon--danger:url('data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M9.504.43a1.516 1.516 0 0 1 2.437 1.713L10.415 5.5h2.123c1.57 0 2.346 1.909 1.22 3.004l-7.34 7.142a1.25 1.25 0 0 1-.871.354h-.302a1.25 1.25 0 0 1-1.157-1.723L5.633 10.5H3.462c-1.57 0-2.346-1.909-1.22-3.004zm1.047 1.074L3.286 8.571A.25.25 0 0 0 3.462 9H6.75a.75.75 0 0 1 .694 1.034l-1.713 4.188 6.982-6.793A.25.25 0 0 0 12.538 7H9.25a.75.75 0 0 1-.683-1.06l2.008-4.418.003-.006-.004-.009-.006-.006-.008-.001q-.005 0-.009.004"/></svg>');--md-admonition-icon--bug:url('data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M4.72.22a.75.75 0 0 1 1.06 0l1 .999a3.5 3.5 0 0 1 2.441 0l.999-1a.748.748 0 0 1 1.265.332.75.75 0 0 1-.205.729l-.775.776c.616.63.995 1.493.995 2.444v.327q0 .15-.025.292c.408.14.764.392 1.029.722l1.968-.787a.75.75 0 0 1 .556 1.392L13 7.258V9h2.25a.75.75 0 0 1 0 1.5H13v.5q-.002.615-.141 1.186l2.17.868a.75.75 0 0 1-.557 1.392l-2.184-.873A5 5 0 0 1 8 16a5 5 0 0 1-4.288-2.427l-2.183.873a.75.75 0 0 1-.558-1.392l2.17-.868A5 5 0 0 1 3 11v-.5H.75a.75.75 0 0 1 0-1.5H3V7.258L.971 6.446a.75.75 0 0 1 .558-1.392l1.967.787c.265-.33.62-.583 1.03-.722a1.7 1.7 0 0 1-.026-.292V4.5c0-.951.38-1.814.995-2.444L4.72 1.28a.75.75 0 0 1 0-1.06m.53 6.28a.75.75 0 0 0-.75.75V11a3.5 3.5 0 1 0 7 0V7.25a.75.75 0 0 0-.75-.75ZM6.173 5h3.654A.17.17 0 0 0 10 4.827V4.5a2 2 0 1 0-4 0v.327c0 .096.077.173.173.173"/></svg>');--md-admonition-icon--example:url('data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M5 5.782V2.5h-.25a.75.75 0 0 1 0-1.5h6.5a.75.75 0 0 1 0 1.5H11v3.282l3.666 5.76C15.619 13.04 14.543 15 12.767 15H3.233c-1.776 0-2.852-1.96-1.899-3.458Zm-2.4 6.565a.75.75 0 0 0 .633 1.153h9.534a.75.75 0 0 0 .633-1.153L12.225 10.5h-8.45ZM9.5 2.5h-3V6c0 .143-.04.283-.117.403L4.73 9h6.54L9.617 6.403A.75.75 0 0 1 9.5 6Z"/></svg>');--md-admonition-icon--quote:url('data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M1.75 2.5h10.5a.75.75 0 0 1 0 1.5H1.75a.75.75 0 0 1 0-1.5m4 5h8.5a.75.75 0 0 1 0 1.5h-8.5a.75.75 0 0 1 0-1.5m0 5h8.5a.75.75 0 0 1 0 1.5h-8.5a.75.75 0 0 1 0-1.5M2.5 7.75v6a.75.75 0 0 1-1.5 0v-6a.75.75 0 0 1 1.5 0"/></svg>');}</style>
+
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Open Sans";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../../../../docs/stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../../../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+  
+
+
+  
+  
+
+<script id="__analytics">function __md_analytics(){function e(){dataLayer.push(arguments)}window.dataLayer=window.dataLayer||[],e("js",new Date),e("config","G-6T56LKHEP0"),document.addEventListener("DOMContentLoaded",(function(){document.forms.search&&document.forms.search.query.addEventListener("blur",(function(){this.value&&e("event","search",{search_term:this.value})}));document$.subscribe((function(){var t=document.forms.feedback;if(void 0!==t)for(var a of t.querySelectorAll("[type=submit]"))a.addEventListener("click",(function(a){a.preventDefault();var n=document.location.pathname,d=this.getAttribute("data-md-value");e("event","feedback",{page:n,data:d}),t.firstElementChild.disabled=!0;var r=t.querySelector(".md-feedback__note [data-md-value='"+d+"']");r&&(r.hidden=!1)})),t.hidden=!1})),location$.subscribe((function(t){e("config","G-6T56LKHEP0",{page_path:t.pathname})}))}));var t=document.createElement("script");t.async=!0,t.src="https://www.googletagmanager.com/gtag/js?id=G-6T56LKHEP0",document.getElementById("__analytics").insertAdjacentElement("afterEnd",t)}</script>
+  
+    <script>"undefined"!=typeof __md_analytics&&__md_analytics()</script>
+  
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#chapter-5-gemini-live-audio-chat-real-time-audio-to-audio-with-websockets" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../../../.." title="Google Cloud Applied AI Engineering" class="md-header__button md-logo" aria-label="Google Cloud Applied AI Engineering" data-md-component="logo">
+      
+  <img src="../../../../../assets/aaie_favicon.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Google Cloud Applied AI Engineering
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Chapter 5: Gemini Live Audio Chat - Real-time Audio-to-Audio with WebSockets
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7a5 5 0 0 0-5 5 5 5 0 0 0 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1M8 13h8v-2H8zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4a5 5 0 0 0 5-5 5 5 0 0 0-5-5"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_2" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="black" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_2">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+          <a href="javascript:void(0)" class="md-search__icon md-icon" title="Share" aria-label="Share" data-clipboard data-clipboard-text="" data-md-component="search-share" tabindex="-1">
+            
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9a3 3 0 0 0-3 3 3 3 0 0 0 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.15c-.05.21-.08.43-.08.66 0 1.61 1.31 2.91 2.92 2.91s2.92-1.3 2.92-2.91A2.92 2.92 0 0 0 18 16.08"/></svg>
+          </a>
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/GoogleCloudPlatform/applied-ai-engineering-samples" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.7.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GoogleCloudPlatform/applied-ai-engineering-samples
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../../.." class="md-tabs__link">
+        
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../../" class="md-tabs__link">
+          
+  
+    
+  
+  GenAI on Vertex AI
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../../../research-operationalization/" class="md-tabs__link">
+          
+  
+    
+  
+  Research Operationalization
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../../../ai-infrastructure/" class="md-tabs__link">
+          
+  
+    
+  
+  AI Infrastructure
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../../../.." title="Google Cloud Applied AI Engineering" class="md-nav__button md-logo" aria-label="Google Cloud Applied AI Engineering" data-md-component="logo">
+      
+  <img src="../../../../../assets/aaie_favicon.png" alt="logo">
+
+    </a>
+    Google Cloud Applied AI Engineering
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/GoogleCloudPlatform/applied-ai-engineering-samples" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.7.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GoogleCloudPlatform/applied-ai-engineering-samples
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../.." class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Home
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+      
+      
+    
+    
+      
+        
+        
+      
+    
+    <li class="md-nav__item md-nav__item--pruned md-nav__item--nested">
+      
+        
+  
+  
+    <a href="../../../../" class="md-nav__link">
+      
+  
+  <span class="md-ellipsis">
+    GenAI on Vertex AI
+  </span>
+  
+
+      
+        <span class="md-nav__icon md-icon"></span>
+      
+    </a>
+  
+
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+    
+    
+      
+      
+    
+    
+      
+        
+        
+      
+    
+    <li class="md-nav__item md-nav__item--pruned md-nav__item--nested">
+      
+        
+  
+  
+    <a href="../../../../../research-operationalization/" class="md-nav__link">
+      
+  
+  <span class="md-ellipsis">
+    Research Operationalization
+  </span>
+  
+
+      
+        <span class="md-nav__icon md-icon"></span>
+      
+    </a>
+  
+
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+    
+    
+      
+      
+    
+    
+      
+        
+        
+      
+    
+    <li class="md-nav__item md-nav__item--pruned md-nav__item--nested">
+      
+        
+  
+  
+    <a href="../../../../../ai-infrastructure/" class="md-nav__link">
+      
+  
+  <span class="md-ellipsis">
+    AI Infrastructure
+  </span>
+  
+
+      
+        <span class="md-nav__icon md-icon"></span>
+      
+    </a>
+  
+
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#project-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      Project Structure
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#system-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      System Architecture
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#detailed-explanation-of-audio-processing" class="md-nav__link">
+    <span class="md-ellipsis">
+      Detailed Explanation of Audio Processing
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#web-audio-api" class="md-nav__link">
+    <span class="md-ellipsis">
+      Web Audio API
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configuration-and-parameters" class="md-nav__link">
+    <span class="md-ellipsis">
+      Configuration and Parameters
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#lessons-learned-and-best-practices" class="md-nav__link">
+    <span class="md-ellipsis">
+      Lessons Learned and Best Practices
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Lessons Learned and Best Practices">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#audio-context-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      Audio Context Setup
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#audio-buffer-management" class="md-nav__link">
+    <span class="md-ellipsis">
+      Audio Buffer Management
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pcm16-data-handling" class="md-nav__link">
+    <span class="md-ellipsis">
+      PCM16 Data Handling
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#playback-timing-and-scheduling" class="md-nav__link">
+    <span class="md-ellipsis">
+      Playback Timing and Scheduling
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#interruption-handling" class="md-nav__link">
+    <span class="md-ellipsis">
+      Interruption Handling
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#protocol-management" class="md-nav__link">
+    <span class="md-ellipsis">
+      Protocol Management
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#state-management" class="md-nav__link">
+    <span class="md-ellipsis">
+      State Management
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#technical-requirements-and-best-practices" class="md-nav__link">
+    <span class="md-ellipsis">
+      Technical Requirements and Best Practices
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#common-pitfalls-to-avoid" class="md-nav__link">
+    <span class="md-ellipsis">
+      Common Pitfalls to Avoid
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      Summary
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+  
+    <a href="https://github.com/GoogleCloudPlatform/applied-ai-engineering-samples/edit/master/docs/genai-on-vertex-ai/gemini_2_0/gemini-multimodal-live-api-dev-guide/part_2_dev_api/chapter_05/README.md" title="Edit this page" class="md-content__button md-icon">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+    
+      
+    
+    <a href="https://github.com/GoogleCloudPlatform/applied-ai-engineering-samples/raw/master/docs/genai-on-vertex-ai/gemini_2_0/gemini-multimodal-live-api-dev-guide/part_2_dev_api/chapter_05/README.md" title="View source of this page" class="md-content__button md-icon">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 18c.56 0 1 .44 1 1s-.44 1-1 1-1-.44-1-1 .44-1 1-1m0-3c-2.73 0-5.06 1.66-6 4 .94 2.34 3.27 4 6 4s5.06-1.66 6-4c-.94-2.34-3.27-4-6-4m0 6.5a2.5 2.5 0 0 1-2.5-2.5 2.5 2.5 0 0 1 2.5-2.5 2.5 2.5 0 0 1 2.5 2.5 2.5 2.5 0 0 1-2.5 2.5M9.27 20H6V4h7v5h5v4.07c.7.08 1.36.25 2 .49V8l-6-6H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h4.5a8.2 8.2 0 0 1-1.23-2"/></svg>
+    </a>
+  
+
+
+<h1 id="chapter-5-gemini-live-audio-chat-real-time-audio-to-audio-with-websockets">Chapter 5: Gemini Live Audio Chat - Real-time Audio-to-Audio with WebSockets<a class="headerlink" href="#chapter-5-gemini-live-audio-chat-real-time-audio-to-audio-with-websockets" title="Permanent link">&para;</a></h1>
+<p>This chapter presents a real-time audio-to-audio chat application that interacts with the Gemini Multimodal Live API using WebSockets and the Web Audio API. It demonstrates a browser-based implementation that captures live microphone input, sends it to the Gemini API, and plays back the model's audio response in real time.</p>
+<p><strong>This chapter builds upon the concepts introduced in previous chapters but introduces significantly more complexity</strong> due to the use of raw WebSockets for bidirectional communication and advanced audio processing techniques for handling live audio streams.</p>
+<p><strong>How This Chapter Differs from Previous Chapters:</strong></p>
+<ul>
+<li><strong>Chapter 2 (Live Audio Chat with Gemini):</strong> Utilized the Python SDK for simplifying the audio streaming, but didn't run in the browser. It handled audio-to-audio but with the assistance of the SDK's higher-level abstractions. <strong>Importantly, Chapter 2 used a <code>model_speaking</code> flag on the client-side to prevent the model's output from being treated as input.</strong> This chapter achieves a similar outcome through a different mechanism, relying on the APIs turn management.</li>
+<li><strong>Chapter 3 (Low-Level WebSocket Interaction - Single Exchange Example):</strong> Introduced low level WebSocket interaction but only for sending a single text query to the model.</li>
+<li><strong>Chapter 4 (Text-to-Speech with WebSockets):</strong> Focused on text-to-speech, sending text to the API and playing back the received audio. It introduced basic audio handling but did not involve live microphone input or complex audio stream management.</li>
+</ul>
+<p><strong>Chapter 5, in contrast, combines the real-time nature of Chapter 2 with the low-level WebSocket approach of Chapters 3 and 4 but implements a full audio-to-audio chat entirely within the browser.</strong> This requires handling:</p>
+<ul>
+<li><strong>Live Microphone Input:</strong> Capturing and processing a continuous stream of audio data from the user's microphone.</li>
+<li><strong>Bidirectional Audio Streaming:</strong> Sending audio chunks to the API while simultaneously receiving and playing back audio responses in real time.</li>
+<li><strong>Advanced Audio Processing:</strong> Converting between audio formats, managing audio buffers, and ensuring smooth playback using the Web Audio API.</li>
+<li><strong>Complex State Management:</strong> Handling interruptions, turn-taking, and potential errors in a real-time audio stream.</li>
+</ul>
+<p><strong>Why the Increased Complexity?</strong></p>
+<p>The jump in complexity comes from the need to manage real-time, bidirectional audio streams directly within the browser using low-level APIs. This involves:</p>
+<ul>
+<li><strong>No SDK Abstraction:</strong> We're working directly with WebSockets and handling the raw message formats defined by the Gemini API, including setup and control messages.</li>
+<li><strong>Manual Audio Handling:</strong> We must manually capture, chunk, encode, decode, process, and play audio data, without the convenience of an SDK's built-in methods.</li>
+<li><strong>Real-time Constraints:</strong> We need to ensure that audio is processed and played back with minimal latency to maintain a natural conversational flow.</li>
+<li><strong>Asynchronous Operations:</strong> We rely heavily on asynchronous JavaScript and Promises to manage the non-blocking nature of WebSockets and audio processing.</li>
+</ul>
+<h2 id="project-structure">Project Structure<a class="headerlink" href="#project-structure" title="Permanent link">&para;</a></h2>
+<p>This chapter's application consists of the following files:</p>
+<ul>
+<li><strong><code>index.html</code>:</strong> The main HTML file that sets up the user interface (a microphone button and an output area for messages) and includes the core JavaScript logic for WebSocket communication and overall application flow.</li>
+<li><strong><code>audio-recorder.js</code>:</strong> Contains the <code>AudioRecorder</code> class, which handles capturing audio from the microphone, converting it to the required format, and emitting chunks of audio data using an <code>EventEmitter3</code> interface.</li>
+<li><strong><code>audio-streamer.js</code>:</strong> Contains the <code>AudioStreamer</code> class, which manages audio playback using the Web Audio API. It handles queuing, buffering, and playing audio chunks received from the API, ensuring smooth and continuous playback.</li>
+<li><strong><code>audio-recording-worklet.js</code>:</strong> Defines an <code>AudioWorkletProcessor</code> that runs in a separate thread and performs the low-level audio processing, including float32 to int16 conversion and chunking.</li>
+<li><strong><code>audioworklet-registry.js</code>:</strong> A utility to help register and manage <code>AudioWorklet</code>s, preventing duplicate registration.</li>
+<li><strong><code>utils.js</code>:</strong> Provides utility functions like <code>audioContext</code> (for creating an <code>AudioContext</code>) and <code>base64ToArrayBuffer</code> (for decoding base64 audio data).</li>
+<li><strong><code>style.css</code>:</strong> Contains basic CSS styles for the user interface.</li>
+</ul>
+<h2 id="system-architecture">System Architecture<a class="headerlink" href="#system-architecture" title="Permanent link">&para;</a></h2>
+<p><img alt="Audio Client Diagram" src="../../assets/audio-to-audio-websocket.png" /></p>
+<h2 id="detailed-explanation-of-audio-processing">Detailed Explanation of Audio Processing<a class="headerlink" href="#detailed-explanation-of-audio-processing" title="Permanent link">&para;</a></h2>
+<p>The audio processing pipeline in this application is crucial for real-time performance. Let's break down the components, design choices, and address the specific questions raised:</p>
+<p><strong>1. Microphone Input and <code>AudioRecorder</code>:</strong></p>
+<ul>
+<li><strong><code>AudioRecorder</code> Class:</strong> This class encapsulates the logic for capturing audio from the user's microphone using the browser's <code>MediaDevices</code> API (<code>navigator.mediaDevices.getUserMedia</code>).</li>
+<li><strong><code>AudioWorklet</code>:</strong> It utilises an <code>AudioWorklet</code> to perform audio processing in a separate thread, preventing the main thread from being blocked by computationally intensive audio operations, which is essential for maintaining a smooth user experience.</li>
+<li>
+<p><strong><code>audio-recording-worklet.js</code>:</strong> This file defines the <code>AudioProcessingWorklet</code> class, which extends <code>AudioWorkletProcessor</code>. It performs the following:</p>
+</li>
+<li>
+<p><strong>Float32 to Int16 Conversion:</strong> Converts the raw audio data from Float32 format (used by the Web Audio API) to Int16 format (required by the Gemini API for PCM audio). The conversion involves scaling the Float32 values (ranging from -1.0 to 1.0) to the Int16 range (-32768 to 32767).
+    <div class="language-javascript highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1">// convert float32 -1 to 1 to int16 -32768 to 32767</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="kd">const</span><span class="w"> </span><span class="nx">int16Value</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">float32Array</span><span class="p">[</span><span class="nx">i</span><span class="p">]</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">32768</span><span class="p">;</span>
+</span></code></pre></div></p>
+</li>
+<li>
+<p><strong>Chunking:</strong> Buffers audio samples and sends them in chunks. This is where the frequency of audio transmission is determined. The <code>buffer</code> has a fixed length of <strong>2048 samples</strong>. When the <code>bufferWriteIndex</code> reaches the end of the buffer, the <code>sendAndClearBuffer</code> function is called. The buffer is sent via <code>postMessage</code> and then cleared, ready for new data.</p>
+<div class="language-javascript highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="w">  </span><span class="c1">// send and clear buffer every 2048 samples,</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span><span class="nx">buffer</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nb">Int16Array</span><span class="p">(</span><span class="mf">2048</span><span class="p">);</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">  </span><span class="c1">// ...</span>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">  </span><span class="k">if</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">bufferWriteIndex</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="k">this</span><span class="p">.</span><span class="nx">buffer</span><span class="p">.</span><span class="nx">length</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">    </span><span class="k">this</span><span class="p">.</span><span class="nx">sendAndClearBuffer</span><span class="p">();</span>
+</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="w">  </span><span class="p">}</span>
+</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>
+</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="w">  </span><span class="c1">// ...</span>
+</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>
+</span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="w">  </span><span class="nx">sendAndClearBuffer</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-1-13"><a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="w">    </span><span class="k">this</span><span class="p">.</span><span class="nx">port</span><span class="p">.</span><span class="nx">postMessage</span><span class="p">({</span>
+</span><span id="__span-1-14"><a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="w">      </span><span class="nx">event</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;chunk&quot;</span><span class="p">,</span>
+</span><span id="__span-1-15"><a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a><span class="w">      </span><span class="nx">data</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-1-16"><a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a><span class="w">        </span><span class="nx">int16arrayBuffer</span><span class="o">:</span><span class="w"> </span><span class="k">this</span><span class="p">.</span><span class="nx">buffer</span><span class="p">.</span><span class="nx">slice</span><span class="p">(</span><span class="mf">0</span><span class="p">,</span><span class="w"> </span><span class="k">this</span><span class="p">.</span><span class="nx">bufferWriteIndex</span><span class="p">).</span><span class="nx">buffer</span><span class="p">,</span>
+</span><span id="__span-1-17"><a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a><span class="w">      </span><span class="p">},</span>
+</span><span id="__span-1-18"><a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a><span class="w">    </span><span class="p">});</span>
+</span><span id="__span-1-19"><a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a><span class="w">    </span><span class="k">this</span><span class="p">.</span><span class="nx">bufferWriteIndex</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0</span><span class="p">;</span>
+</span><span id="__span-1-20"><a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a><span class="w">  </span><span class="p">}</span>
+</span></code></pre></div>
+<p><strong>At the input sample rate of 16000 Hz, a chunk of 2048 samples is created and sent approximately every 128 milliseconds (2048 / 16000 = 0.128 seconds).</strong></p>
+</li>
+<li>
+<p><strong>EventEmitter3:</strong> The <code>AudioRecorder</code> class extends <code>EventEmitter3</code>, allowing it to emit events. Specifically, it emits a <code>data</code> event whenever a chunk of audio data is ready to be sent. Other parts of the application can listen for this event to receive the audio data.</p>
+</li>
+<li><strong><code>start()</code> and <code>stop()</code> Methods:</strong> These methods control the recording process, starting and stopping the microphone capture and managing the associated resources.</li>
+</ul>
+<p><strong>2. WebSocket Communication (<code>index.html</code>)</strong></p>
+<ul>
+<li><strong><code>ws.onopen</code>:</strong> Sends the initial <code>setup</code> message to the Gemini API, specifying the model, audio output as the response modality, and the desired voice.</li>
+<li><strong><code>ws.onmessage</code>:</strong> Handles incoming messages from the API:</li>
+<li><strong><code>setupComplete</code>:</strong> Enables the microphone button, indicating that the connection is ready.</li>
+<li><strong><code>serverContent</code>:</strong> Processes audio data, handles interruptions, and sends continuation signals as needed.</li>
+<li><strong><code>sendAudioChunk()</code>:</strong> This function is triggered by the <code>data</code> event emitted by the <code>AudioRecorder</code>. It takes a chunk of audio data (which has already been converted to Int16 and then to base64 in the <code>AudioRecorder</code>), constructs a <code>realtime_input</code> message, and sends it to the API via <code>ws.send()</code>. The message format adheres to the <code>BidiGenerateContentRealtimeInput</code> structure defined in the API documentation.</li>
+<li><strong><code>sendEndMessage()</code> and <code>sendContinueSignal()</code>:</strong> These are crucial for managing the conversation flow.</li>
+<li><strong><code>sendEndMessage()</code>:</strong> Sends a message with <code>turn_complete: true</code> when the user stops recording (by clicking the "Stop Mic" button). This signals to the API that the user's turn is finished.
+    <div class="language-javascript highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kd">const</span><span class="w"> </span><span class="nx">message</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span><span class="nx">client_content</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">    </span><span class="nx">turns</span><span class="o">:</span><span class="w"> </span><span class="p">[</span>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">      </span><span class="p">{</span>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">        </span><span class="nx">role</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;user&quot;</span><span class="p">,</span>
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">        </span><span class="nx">parts</span><span class="o">:</span><span class="w"> </span><span class="p">[],</span><span class="w"> </span><span class="c1">// no more audio for this turn</span>
+</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="w">      </span><span class="p">},</span>
+</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="w">    </span><span class="p">],</span>
+</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="w">    </span><span class="nx">turn_complete</span><span class="o">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w"> </span><span class="c1">// end of turn</span>
+</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="w">  </span><span class="p">},</span>
+</span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="p">};</span>
+</span></code></pre></div></li>
+<li><strong><code>sendContinueSignal()</code>:</strong> Sends a message with <code>turn_complete: false</code> immediately after receiving an audio chunk from the model, <em>unless</em> the model indicates <code>turnComplete: true</code>. This serves as a keep-alive, letting the API know that the client is still listening and ready for more audio data. This is important for the low-latency, real-time nature of the interaction.
+  <div class="language-javascript highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kd">const</span><span class="w"> </span><span class="nx">message</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span><span class="nx">client_content</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">    </span><span class="nx">turns</span><span class="o">:</span><span class="w"> </span><span class="p">[</span>
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">      </span><span class="p">{</span>
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">        </span><span class="nx">role</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;user&quot;</span><span class="p">,</span>
+</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="w">        </span><span class="nx">parts</span><span class="o">:</span><span class="w"> </span><span class="p">[],</span><span class="w"> </span><span class="c1">// no more audio for this turn</span>
+</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="w">      </span><span class="p">},</span>
+</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="w">    </span><span class="p">],</span>
+</span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="w">    </span><span class="nx">turn_complete</span><span class="o">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span><span class="w"> </span><span class="c1">// not the end of turn, keep going</span>
+</span><span id="__span-3-10"><a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="w">  </span><span class="p">},</span>
+</span><span id="__span-3-11"><a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a><span class="p">};</span>
+</span></code></pre></div></li>
+<li><strong><code>toggleMicrophone()</code>:</strong> Starts and stops the recording process, calling the appropriate methods in <code>AudioRecorder</code>.</li>
+</ul>
+<p><strong>3. Audio Playback and <code>AudioStreamer</code>:</strong></p>
+<ul>
+<li><strong><code>AudioStreamer</code> Class:</strong> This class manages the playback of audio chunks received from the Gemini API.</li>
+<li><strong><code>AudioContext</code>:</strong> It utilizes the Web Audio APIs <code>AudioContext</code> for handling audio playback. The <code>AudioContext</code> is initialized only when the first audio chunk is received to comply with browser autoplay policies. It sets a sample rate of 24000 Hz.</li>
+<li><strong>Lazy Initialization:</strong> The <code>AudioContext</code> is only created when the first audio chunk is received. This is because some browsers restrict audio playback unless it's initiated by a user action.</li>
+<li><strong>Sample Rate:</strong> The sample rate is set to 24000 Hz, which is a common sample rate for speech audio.</li>
+<li><strong><code>addPCM16()</code>:</strong> This method receives PCM16 audio chunks, converts them back to Float32, creates <code>AudioBuffer</code> objects, and adds them to an internal queue (<code>audioQueue</code>).</li>
+<li><strong><code>playNextBuffer()</code>:</strong> This method retrieves audio buffers from the queue and plays them using an <code>AudioBufferSourceNode</code>. It ensures that chunks are played sequentially, one after the other, using the <code>onended</code> event of the source node and a small delay.</li>
+<li><strong><code>isPlaying</code> Flag:</strong> This flag tracks whether audio is currently being played, preventing overlapping playback.</li>
+<li><strong><code>stop()</code> and <code>resume()</code>:</strong> These methods provide control over stopping and resuming audio playback.</li>
+<li><strong><code>complete()</code>:</strong> This method is called to signal the end of an audio stream, allowing any remaining buffers in the queue to be played out.</li>
+<li><strong>Stall Detection:</strong> Implements a mechanism to detect and recover from playback stalls, ensuring continuous audio flow. The <code>checkPlaybackStatus()</code> function periodically checks if audio playback has stalled (by comparing the current time with the last playback time). If a stall is detected and there are still buffers in the queue, it attempts to restart playback by calling <code>playNextBuffer()</code>. This is a safety net to handle situations where the <code>onended</code> event might not fire reliably or if there are unexpected delays in audio processing.</li>
+</ul>
+<div class="language-javascript highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="w">    </span><span class="nx">checkPlaybackStatus</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">      </span><span class="c1">// Clear any existing timeout</span>
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">      </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">playbackTimeout</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">        </span><span class="nx">clearTimeout</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">playbackTimeout</span><span class="p">);</span>
+</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">      </span><span class="p">}</span>
+</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>
+</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="w">      </span><span class="c1">// Set a new timeout to check playback status</span>
+</span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="w">      </span><span class="k">this</span><span class="p">.</span><span class="nx">playbackTimeout</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">setTimeout</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-4-9"><a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="w">        </span><span class="kd">const</span><span class="w"> </span><span class="nx">now</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">this</span><span class="p">.</span><span class="nx">context</span><span class="p">.</span><span class="nx">currentTime</span><span class="p">;</span>
+</span><span id="__span-4-10"><a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="w">        </span><span class="kd">const</span><span class="w"> </span><span class="nx">timeSinceLastPlayback</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">now</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="k">this</span><span class="p">.</span><span class="nx">lastPlaybackTime</span><span class="p">;</span>
+</span><span id="__span-4-11"><a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a>
+</span><span id="__span-4-12"><a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a><span class="w">        </span><span class="c1">// If more than 1 second has passed since last playback and we have buffers to play</span>
+</span><span id="__span-4-13"><a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a><span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">timeSinceLastPlayback</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mf">1</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="k">this</span><span class="p">.</span><span class="nx">audioQueue</span><span class="p">.</span><span class="nx">length</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mf">0</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="k">this</span><span class="p">.</span><span class="nx">isPlaying</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-4-14"><a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a><span class="w">          </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;Playback appears to have stalled, restarting...&#39;</span><span class="p">);</span>
+</span><span id="__span-4-15"><a id="__codelineno-4-15" name="__codelineno-4-15" href="#__codelineno-4-15"></a><span class="w">          </span><span class="k">this</span><span class="p">.</span><span class="nx">playNextBuffer</span><span class="p">();</span>
+</span><span id="__span-4-16"><a id="__codelineno-4-16" name="__codelineno-4-16" href="#__codelineno-4-16"></a><span class="w">        </span><span class="p">}</span>
+</span><span id="__span-4-17"><a id="__codelineno-4-17" name="__codelineno-4-17" href="#__codelineno-4-17"></a>
+</span><span id="__span-4-18"><a id="__codelineno-4-18" name="__codelineno-4-18" href="#__codelineno-4-18"></a><span class="w">        </span><span class="c1">// Continue checking if we&#39;re still playing</span>
+</span><span id="__span-4-19"><a id="__codelineno-4-19" name="__codelineno-4-19" href="#__codelineno-4-19"></a><span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">isPlaying</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-4-20"><a id="__codelineno-4-20" name="__codelineno-4-20" href="#__codelineno-4-20"></a><span class="w">          </span><span class="k">this</span><span class="p">.</span><span class="nx">checkPlaybackStatus</span><span class="p">();</span>
+</span><span id="__span-4-21"><a id="__codelineno-4-21" name="__codelineno-4-21" href="#__codelineno-4-21"></a><span class="w">        </span><span class="p">}</span>
+</span><span id="__span-4-22"><a id="__codelineno-4-22" name="__codelineno-4-22" href="#__codelineno-4-22"></a><span class="w">      </span><span class="p">},</span><span class="w"> </span><span class="mf">1000</span><span class="p">);</span>
+</span><span id="__span-4-23"><a id="__codelineno-4-23" name="__codelineno-4-23" href="#__codelineno-4-23"></a><span class="w">    </span><span class="p">}</span>
+</span></code></pre></div>
+<p><strong>4. Interruption Handling:</strong></p>
+<ul>
+<li><strong>Detection:</strong> The API signals an interruption by sending a <code>serverContent</code> message with the <code>interrupted</code> flag set to <code>true</code>. This typically happens when the APIs VAD detects speech from the user while the model is still speaking.
+  <div class="language-javascript highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">wsResponse</span><span class="p">.</span><span class="nx">serverContent</span><span class="p">.</span><span class="nx">interrupted</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">  </span><span class="nx">logMessage</span><span class="p">(</span><span class="s2">&quot;Gemini: Interrupted&quot;</span><span class="p">);</span>
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="w">  </span><span class="nx">isInterrupted</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span><span class="p">;</span>
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="w">  </span><span class="nx">audioStreamer</span><span class="p">.</span><span class="nx">stop</span><span class="p">();</span>
+</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="w">  </span><span class="k">return</span><span class="p">;</span>
+</span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="p">}</span>
+</span></code></pre></div></li>
+<li><strong>Client-Side Handling:</strong> When the <code>interrupted</code> flag is received:</li>
+<li>The <code>isInterrupted</code> flag is set to <code>true</code>.</li>
+<li>The <code>AudioStreamer</code>'s <code>stop()</code> method is called to immediately halt any ongoing audio playback. This ensures that the interrupted audio is not played.</li>
+<li><strong>Latency:</strong> The latency for interruption detection is primarily determined by the APIs VAD and the network latency. The client-side processing adds minimal delay. On a fast connection, the interruption should feel near-instantaneous.</li>
+<li><strong>No Specific Parameter:</strong> There is no specific parameter in this code to tune the interruption sensitivity, as that is primarily controlled by the APIs VAD.</li>
+<li><strong>Effects of Changing VAD (if possible):</strong> If the API provided a way to adjust VAD sensitivity (which it currently doesn't for the Multimodal Live API), the effects would be:</li>
+<li><strong>More Sensitive VAD:</strong> Interruptions would be triggered more easily, potentially leading to a more responsive but also more "jumpy" conversation.</li>
+<li><strong>Less Sensitive VAD:</strong> The model would be more likely to finish its turn, but it might feel less responsive to user interruptions.</li>
+</ul>
+<p><strong>5. Preventing Feedback Loop (No Echo):</strong>
+In Chapter 2 with the Python SDK we introduced a <code>model_speaking</code> flag to prevent to model from listening to itself. In this chapter, we achieve this without an explicit flag on the client-side, <strong>relying on the APIs built-in turn management capabilities.</strong> Here's how it works:</p>
+<ul>
+<li>
+<p><strong>Turn Detection:</strong> The Gemini API uses its Voice Activity Detection (VAD) to determine when a user's turn begins and ends. When the user starts speaking, the VAD detects this as the start of a turn. When the user stops speaking for a certain duration (a pause), the VAD determines that the user's turn has ended.</p>
+</li>
+<li>
+<p><strong><code>turn_complete</code> Signal:</strong> The <code>turn_complete: true</code> signal sent in the <code>sendEndMessage()</code> function after the user stops speaking explicitly tells the API that the user's turn is over. This is important for the API to properly segment the conversation. The sending of this signal is directly tied to the user clicking the "Stop Mic" button, which in turn is only clickable when the user is speaking. This means the user has control when a turn ends.</p>
+</li>
+<li>
+<p><strong>API-Side Management:</strong> The API manages the conversation flow internally, ensuring that the model only processes audio input that is considered part of the user's turn. The model does not start generating its response until the user's turn is deemed complete (either by <code>turn_complete: true</code> or by the VAD detecting a sufficiently long pause).</p>
+</li>
+<li>
+<p><strong><code>sendContinueSignal()</code>:</strong> The <code>sendContinueSignal()</code> function sends <code>turn_complete: false</code> after model audio is received unless the model indicated <code>turn_complete: true</code>. This is important. Without that the model would not continue to speak if the generated audio takes longer than the VAD's pause detection.</p>
+</li>
+</ul>
+<p>Essentially, the API is designed to handle the "listen while speaking" scenario gracefully. It's not simply feeding the output audio back into the input. The VAD and turn management logic ensure that the model only processes audio it considers as user input.</p>
+<p><strong>6. Audio Streaming and Context Window:</strong></p>
+<ul>
+<li><strong>Continuous Streaming:</strong> As long as the microphone is active and the user is speaking, audio data is continuously sent to the Gemini API in chunks. This is necessary for real-time interaction.</li>
+<li><strong>Chunk Size and Data Rate:</strong></li>
+<li>Each chunk contains 2048 samples of 16-bit PCM audio.</li>
+<li>Each sample is 2 bytes (16 bits = 2 bytes).</li>
+<li>Therefore, each chunk is 2048 samples * 2 bytes/sample = 4096 bytes.</li>
+<li>Chunks are sent roughly every 128 milliseconds.</li>
+<li>This translates to a data rate of approximately 4096 bytes / 0.128 seconds = 32 KB/s (kilobytes per second).</li>
+<li><strong>VAD and Turn Boundaries:</strong> The APIs VAD plays a crucial role in determining the boundaries of a turn. When VAD detects a significant enough pause in the user's speech, it considers the turn to be over, and the model generates a response based on that segment of audio.</li>
+<li><strong>Practical Implications:</strong> For a natural conversational flow, it's generally a good practice to keep your utterances relatively concise and allow for turn-taking. This helps the API process the audio effectively and generate relevant responses.</li>
+</ul>
+<p><strong>7. User Interface (<code>index.html</code>)</strong></p>
+<ul>
+<li><strong>"Start Mic"/"Stop Mic" Button:</strong> This button controls the microphone recording. Its text toggles between "Start Mic" and "Stop Mic" depending on the recording state.</li>
+<li><strong>Output Area:</strong> The <code>div</code> with the ID <code>output</code> is used to display messages to the user, such as "Recording started...", "Recording stopped...", "Gemini: Speaking...", and "Gemini: Finished speaking".</li>
+<li><strong>Visual Feedback:</strong> The UI provides basic visual feedback about the state of the application (recording, playing audio, etc.).</li>
+<li><strong>Initial State:</strong> When the page loads, the microphone button is disabled. It is only enabled after the WebSocket connection is successfully established and the setup message exchange is complete.</li>
+</ul>
+<p><strong>8. Debugging</strong></p>
+<ul>
+<li><strong>Browser Developer Tools:</strong> The primary tool for debugging this application is your browser's developer tools (usually accessed by pressing F12).</li>
+<li><strong>Console:</strong> Use the console to view <code>console.log</code> messages, errors, and warnings. The code includes numerous <code>console.log</code> statements to help you track the flow of execution and the data being processed.</li>
+<li><strong>Network Tab:</strong> Use the Network tab to monitor WebSocket traffic. You can inspect the individual messages being sent and received, including their contents and timing. This is invaluable for understanding the communication with the API.</li>
+<li><strong>Debugger:</strong> Use the JavaScript debugger to set breakpoints, step through the code, inspect variables, and analyze the call stack.</li>
+<li><strong><code>logMessage()</code> Function:</strong> This function provides a simple way to display messages in the <code>output</code> div on the page, providing visual feedback within the application itself.</li>
+</ul>
+<p><strong>9. Further Considerations</strong></p>
+<ul>
+<li><strong>Error Handling:</strong> The code includes basic error handling, but it could be made more robust by handling specific error codes or messages from the API and providing more informative feedback to the user.</li>
+<li><strong>Security:</strong> The API key is currently hardcoded in the HTML file. For production, you should <strong>never</strong> expose your API key directly in client-side code. Instead, use a secure backend server to handle authentication and proxy requests to the API.</li>
+<li><strong>Scalability:</strong> This example is designed for a single user. For a multi-user scenario, you would need to manage multiple WebSocket connections and potentially use a server-side component to handle user sessions and routing.</li>
+<li><strong>Audio Quality:</strong> The audio quality depends on the microphone, network conditions, and the APIs processing. You can experiment with different sample rates and chunk sizes, but these values are often constrained by the APIs requirements and the need to balance latency and bandwidth.</li>
+<li><strong>Network Latency:</strong> Network latency can significantly impact the real-time performance of the application. There's no single solution to mitigate network latency, but using a server closer to the user's location and optimizing the audio processing pipeline can help.</li>
+<li><strong>Audio Level:</strong> There is a <code>gainNode</code> to allow for controlling the volume of the output audio in the <code>AudioStreamer</code>. This is not used yet but could be exposed to the user through the UI if needed.</li>
+</ul>
+<h2 id="web-audio-api">Web Audio API<a class="headerlink" href="#web-audio-api" title="Permanent link">&para;</a></h2>
+<p>The Web Audio API is a high-level JavaScript API for processing and synthesizing audio in web applications. It provides a powerful and flexible system for manipulating audio within the browser. It is based on the idea of an <strong>audio graph</strong>, where different <strong>audio nodes</strong> are connected to process an audio stream.</p>
+<p><strong>Key Concepts:</strong></p>
+<ul>
+<li><strong><code>AudioContext</code>:</strong> The primary interface for working with the Web Audio API. It represents an audio-processing graph built from audio nodes. You can only have one <code>AudioContext</code> per document. Think of it as the container or the manager for all audio operations.</li>
+<li><strong>Audio Nodes:</strong> Building blocks of the audio graph. They perform specific audio processing tasks. Examples include:</li>
+<li><strong><code>AudioBufferSourceNode</code>:</strong> Represents an audio source consisting of in-memory audio data stored in an <code>AudioBuffer</code>. Used here to play the audio chunks received from the API.</li>
+<li><strong><code>MediaStreamAudioSourceNode</code>:</strong> Represents an audio source consisting of a <code>MediaStream</code> (e.g., from a microphone). Used here to capture audio from the microphone.</li>
+<li><strong><code>GainNode</code>:</strong> Controls the volume (gain) of the audio signal. Used here for potential volume adjustments.</li>
+<li><strong><code>AudioWorkletNode</code>:</strong> A special type of node that allows you to run custom audio processing JavaScript code in a separate thread (the audio rendering thread). This is essential for real-time audio processing as it prevents blocking the main thread and causing glitches. Used here (<code>audio-recording-worklet.js</code>) to handle audio chunking and format conversion in a separate thread.</li>
+<li><strong><code>AudioBuffer</code>:</strong> Represents a short audio asset residing in memory. Used to hold the audio data of each chunk.</li>
+<li><strong><code>AudioParam</code>:</strong> Represents a parameter of an audio node (e.g., the gain of a <code>GainNode</code>). Can be automated over time.</li>
+<li><strong><code>AudioWorklet</code>:</strong> Enables developers to write custom audio processing scripts that run in a separate thread. This is crucial for performance-sensitive audio applications, as it ensures that audio processing doesn't block the main thread and cause glitches or delays. <code>AudioWorklet</code>s are defined in separate JavaScript files (like <code>audio-recording-worklet.js</code>) and are added to the <code>AudioContext</code> using <code>audioContext.audioWorklet.addModule()</code>.</li>
+</ul>
+<p><strong>How This Application Uses the Web Audio API:</strong></p>
+<ul>
+<li><strong><code>AudioContext</code>:</strong> An <code>AudioContext</code> is created to manage the entire audio graph. It's initialized with a sample rate of 24000 Hz, matching the APIs output sample rate.</li>
+<li><strong><code>AudioWorkletNode</code>:</strong> An <code>AudioWorkletNode</code> is used to run the <code>AudioProcessingWorklet</code> defined in <code>audio-recording-worklet.js</code>. This handles the real-time processing of microphone input, converting it to Int16 format and dividing it into chunks.</li>
+<li><strong><code>AudioBufferSourceNode</code>:</strong> An <code>AudioBufferSourceNode</code> is created for each audio chunk received from the API. The audio data is decoded, converted to Float32, and then used to create an <code>AudioBuffer</code> that is assigned to the source node.</li>
+<li><strong><code>MediaStreamAudioSourceNode</code>:</strong> A <code>MediaStreamAudioSourceNode</code> is created to capture the audio stream from the user's microphone.</li>
+<li><strong><code>GainNode</code>:</strong> A <code>GainNode</code> is connected to the output for potential volume control.</li>
+<li><strong>Connections:</strong> The nodes are connected: <code>MediaStreamAudioSourceNode</code> -&gt; <code>AudioWorkletNode</code> (for input processing), and <code>AudioBufferSourceNode</code> -&gt; <code>GainNode</code> -&gt; <code>AudioContext.destination</code> (for output).</li>
+</ul>
+<p><strong>Audio Queueing and Buffering:</strong></p>
+<ul>
+<li><strong><code>audioQueue</code>:</strong> This array in <code>AudioStreamer</code> acts as a queue for incoming audio chunks. Chunks are added to the queue as they are received from the API.</li>
+<li><strong><code>playNextBuffer()</code>:</strong> This function retrieves and plays buffers from the queue sequentially. It uses the <code>onended</code> event of the <code>AudioBufferSourceNode</code> to trigger the playback of the next chunk, ensuring a continuous stream.</li>
+<li><strong>Buffering:</strong> The Web Audio API internally handles some buffering, but the <code>audioQueue</code> provides an additional layer of buffering to smooth out any irregularities in the arrival of audio chunks.</li>
+</ul>
+<p><strong>Batched Sending:</strong></p>
+<ul>
+<li>The term "batching" isn't explicitly used in the code, but the concept is present in how audio chunks are created and sent. The <code>AudioWorklet</code> buffers 2048 samples before sending a chunk. This can be considered a form of batching, as it sends data in discrete units rather than a continuous stream of individual samples. This approach balances the need for real-time responsiveness with the efficiency of sending data in larger packets.</li>
+</ul>
+<h2 id="configuration-and-parameters">Configuration and Parameters<a class="headerlink" href="#configuration-and-parameters" title="Permanent link">&para;</a></h2>
+<p>The following parameters and values are used in this application and can be customized:</p>
+<ul>
+<li><strong><code>model</code>:</strong> <code>"models/gemini-2.0-flash-exp"</code> (specifies the Gemini model).</li>
+<li><strong><code>response_modalities</code>:</strong> <code>["audio"]</code> (requests audio output from the API).</li>
+<li><strong><code>speech_config</code>:</strong></li>
+<li><strong><code>voice_config</code></strong>:<ul>
+<li><strong><code>prebuilt_voice_config</code></strong>:</li>
+<li><strong><code>voice_name</code></strong>: <code>Aoede</code> (specifies which voice to use).
+    Possible values: <code>Aoede</code>, <code>Charon</code>, <code>Fenrir</code>, <code>Kore</code>, <code>Puck</code></li>
+</ul>
+</li>
+<li><strong><code>sampleRate</code>:</strong>
+  The sample rate is set to 16000 Hz for the input and 24000 Hz for the output. This is dictated by the APIs requirements.</li>
+<li><strong>Input (Microphone):</strong> 16000 Hz (set in <code>audio-recorder.js</code>). This is a common sample rate for speech recognition.<ul>
+<li><strong>Why 16000 Hz for input?</strong> 16000 Hz is a standard sample rate for speech processing and is often used in speech recognition systems because it captures most of the relevant frequency information in human speech while keeping computational costs manageable. Using a higher sample rate for input might not provide significant improvements in speech recognition accuracy for this application.</li>
+</ul>
+</li>
+<li><strong>Output (API):</strong> 24000 Hz (specified in the API documentation and when creating the <code>AudioContext</code>). This is a higher sample rate, providing better audio quality for playback.<ul>
+<li><strong>Why 24000 Hz for output?</strong> 24000 Hz is chosen because it's the sample rate at which the API provides audio output. Using this rate ensures that the audio is played back at the correct speed and pitch.</li>
+</ul>
+</li>
+<li><strong><code>CHUNK_SIZE</code> (in <code>audio-recording-worklet.js</code>):</strong> 2048 samples. This determines the size of the audio chunks sent to the API. It represents a good balance between latency and processing overhead.</li>
+<li><strong>Calculation:</strong> With a sample rate of 16000 Hz, a 2048-sample chunk corresponds to 2048 / 16000 = 0.128 seconds, or 128 milliseconds.</li>
+<li><strong>Why 2048 samples per chunk?</strong> This value is chosen to balance the need for low latency with the overhead of sending frequent messages. Smaller chunks would result in lower latency but would increase the number of messages sent to the API, potentially leading to higher processing overhead and network congestion. Larger chunks would reduce the frequency of messages but increase latency.</li>
+<li><strong>Effects of Changing <code>CHUNK_SIZE</code>:</strong><ul>
+<li><strong>Smaller <code>CHUNK_SIZE</code> (e.g., 1024 samples):</strong></li>
+<li><strong>Pros:</strong> Lower latency (around 64 milliseconds per chunk). The application would feel more responsive.</li>
+<li><strong>Cons:</strong> Increased processing overhead on both the client and server sides due to more frequent message sending and handling. Increased network traffic. The audio might also start to sound choppy and distorted due to potential buffer underruns.</li>
+<li><strong>Larger <code>CHUNK_SIZE</code> (e.g., 4096 samples):</strong></li>
+<li><strong>Pros:</strong> Reduced processing overhead and network traffic.</li>
+<li><strong>Cons:</strong> Higher latency (around 256 milliseconds per chunk). The application would feel less responsive, and the conversation might feel sluggish.</li>
+</ul>
+</li>
+<li><strong>Audio Format:</strong></li>
+<li><strong>Input:</strong> The microphone provides audio data in Float32 format.</li>
+<li><strong>API Input:</strong> The API expects audio data in 16-bit linear PCM (Int16) format, little-endian.</li>
+<li><strong>API Output:</strong> The API provides audio data in base64-encoded 16-bit linear PCM (Int16) format, little-endian.</li>
+<li><strong>Output:</strong> The <code>AudioContext</code> works with Float32 audio data.</li>
+</ul>
+<h2 id="lessons-learned-and-best-practices">Lessons Learned and Best Practices<a class="headerlink" href="#lessons-learned-and-best-practices" title="Permanent link">&para;</a></h2>
+<p>Through the development of this real-time audio streaming application, several important lessons were learned, and best practices were discovered:</p>
+<h3 id="audio-context-setup">Audio Context Setup<a class="headerlink" href="#audio-context-setup" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Lazy Initialization:</strong> Initialize the <code>AudioContext</code> only when needed, typically in response to a user interaction, to comply with browser autoplay policies.</li>
+</ul>
+<h3 id="audio-buffer-management">Audio Buffer Management<a class="headerlink" href="#audio-buffer-management" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Avoid Fixed Buffer Sizes:</strong> Instead of using fixed buffer sizes and trying to manage partial buffers, adapt to the natural chunk sizes provided by the API. Process each chunk as it arrives. This simplifies buffer management and improves playback smoothness.</li>
+<li><strong>Don't Overcomplicate:</strong> Simple sequential playback using the <code>onended</code> event is often more effective and easier to manage than complex scheduling logic.</li>
+</ul>
+<h3 id="pcm16-data-handling">PCM16 Data Handling<a class="headerlink" href="#pcm16-data-handling" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Correct Conversion:</strong> Ensure that PCM16 data is correctly interpreted and converted to Float32 format for the Web Audio API. The conversion involves normalizing the 16-bit integer values to the range [-1, 1].</li>
+</ul>
+<h3 id="playback-timing-and-scheduling">Playback Timing and Scheduling<a class="headerlink" href="#playback-timing-and-scheduling" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Sequential Playback:</strong> Use the <code>onended</code> event of <code>AudioBufferSourceNode</code> to trigger the playback of the next audio chunk. This ensures that chunks are played sequentially without overlap.</li>
+<li><strong>Avoid Aggressive Scheduling:</strong> Do not schedule buffers too far in advance. This can lead to memory issues and make it difficult to handle interruptions.</li>
+</ul>
+<h3 id="interruption-handling">Interruption Handling<a class="headerlink" href="#interruption-handling" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Immediate Stop:</strong> When an interruption is detected (using the <code>interrupted</code> flag from the API), stop the current audio playback immediately using <code>audioStreamer.stop()</code>.</li>
+<li><strong>State Reset:</strong> Reset the <code>isInterrupted</code> flag and any other relevant state variables to prepare for new audio input.</li>
+<li><strong>Clear Buffers:</strong> Ensure that any pending audio buffers are cleared to prevent stale audio from playing.</li>
+</ul>
+<h3 id="protocol-management">Protocol Management<a class="headerlink" href="#protocol-management" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Setup Message:</strong> Send the <code>setup</code> message as the very first message after establishing the WebSocket connection. This configures the session with the API.</li>
+<li><strong>Voice Selection:</strong> In the setup message, select a voice in the speech config, which determines the voice of the audio response.</li>
+<li><strong>Continue Signals:</strong> Send <code>client_content</code> messages with <code>turn_complete: false</code> to maintain the streaming connection and signal that the client is ready for more audio data. Send these signals immediately after receiving and processing an audio chunk from the model.</li>
+<li><strong>Turn Completion:</strong> Send a <code>client_content</code> message with <code>turn_complete: true</code> to indicate the end of the user's turn.</li>
+</ul>
+<h3 id="state-management">State Management<a class="headerlink" href="#state-management" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Track Essential States:</strong> Keep track of states like <code>isRecording</code>, <code>initialized</code>, and <code>isInterrupted</code> to manage the application flow correctly.</li>
+<li><strong>Reset States Appropriately:</strong> Reset these states at the appropriate times, such as when starting a new recording or after an interruption.</li>
+</ul>
+<h3 id="technical-requirements-and-best-practices">Technical Requirements and Best Practices<a class="headerlink" href="#technical-requirements-and-best-practices" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong><code>AudioContext</code> Sample Rate:</strong> Always initialize the <code>AudioContext</code> with a sample rate of 24000 Hz for compatibility with the Gemini API.</li>
+<li><strong>WebSocket Configuration:</strong> Ensure the WebSocket connection is properly configured with the correct API endpoint and API key.</li>
+<li><strong>Event Handling:</strong> Implement proper event handling for all relevant audio and WebSocket events, including <code>onopen</code>, <code>onmessage</code>, <code>onerror</code>, <code>onclose</code>, <code>onended</code>, and custom events like the <code>data</code> event from <code>AudioRecorder</code>.</li>
+<li><strong>State Management:</strong> Implement robust state management to track the recording state, initialization state, interruption state, and other relevant flags.</li>
+</ul>
+<h3 id="common-pitfalls-to-avoid">Common Pitfalls to Avoid<a class="headerlink" href="#common-pitfalls-to-avoid" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Overly Complex Buffer Management:</strong> Avoid using fixed buffer sizes or complex buffering logic when a simpler sequential approach is sufficient.</li>
+<li><strong>Aggressive Buffer Scheduling:</strong> Don't schedule audio buffers too far in advance, as this can lead to memory issues and complicate interruption handling.</li>
+<li><strong>Incorrect PCM16 Handling:</strong> Ensure that PCM16 data is correctly converted to Float32 format, and that the sample rate is properly considered.</li>
+<li><strong>Ignoring <code>turn_complete</code>:</strong> Always handle the <code>turn_complete</code> signal from the API to properly manage turn-taking.</li>
+<li><strong>Neglecting State Management:</strong> Failing to properly manage and reset state variables can lead to unexpected behavior and bugs.</li>
+<li><strong>Forgetting Continue Signals:</strong> Remember to send continue signals to maintain the streaming connection, especially during long audio generation.</li>
+</ul>
+<h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
+<p>This chapter provides a real-world example of building a real-time, audio-to-audio chat application with the Gemini Multimodal Live API using WebSockets and the Web Audio API. It demonstrates the complexities of handling live audio streams, managing bidirectional communication, and performing necessary audio format conversions, all within a browser environment. It also highlights common pitfalls and best practices discovered during the development process.</p>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  <form class="md-feedback" name="feedback" hidden>
+    <fieldset>
+      <legend class="md-feedback__title">
+        Was this page helpful?
+      </legend>
+      <div class="md-feedback__inner">
+        <div class="md-feedback__list">
+          
+            <button class="md-feedback__icon md-icon" type="submit" title="This page was helpful" data-md-value="1">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M5 9v12H1V9zm4 12a2 2 0 0 1-2-2V9c0-.55.22-1.05.59-1.41L14.17 1l1.06 1.06c.27.27.44.64.44 1.05l-.03.32L14.69 8H21a2 2 0 0 1 2 2v2c0 .26-.05.5-.14.73l-3.02 7.05C19.54 20.5 18.83 21 18 21zm0-2h9.03L21 12v-2h-8.79l1.13-5.32L9 9.03z"/></svg>
+            </button>
+          
+            <button class="md-feedback__icon md-icon" type="submit" title="This page could be improved" data-md-value="0">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 15V3h4v12zM15 3a2 2 0 0 1 2 2v10c0 .55-.22 1.05-.59 1.41L9.83 23l-1.06-1.06c-.27-.27-.44-.64-.44-1.06l.03-.31.95-4.57H3a2 2 0 0 1-2-2v-2c0-.26.05-.5.14-.73l3.02-7.05C4.46 3.5 5.17 3 6 3zm0 2H5.97L3 12v2h8.78l-1.13 5.32L15 14.97z"/></svg>
+            </button>
+          
+        </div>
+        <div class="md-feedback__note">
+          
+            <div data-md-value="1" hidden>
+              
+              
+                
+              
+              Thanks for your feedback!
+            </div>
+          
+            <div data-md-value="0" hidden>
+              
+              
+                
+              
+              Thanks for your feedback! Help us improve this page by using our <a href="https://docs.google.com/forms/d/e/1FAIpQLSeHeph7Bf-BB8VOB63m3nDzo1_R_bM8zC_bwWfaTYrQAc0epQ/viewform?resourcekey=0-qNgLy5tTZZDA2jYDzFD9ag" target="_blank" rel="noopener">feedback form</a>.
+            </div>
+          
+        </div>
+      </div>
+    </fieldset>
+  </form>
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+</div>
+      
+        <div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/GoogleCloudPlatform/applied-ai-engineering-samples" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.7.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8M97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://cloud.google.com/" target="_blank" rel="noopener" title="cloud.google.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 488 512"><!--! Font Awesome Free 6.7.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 123 24.5 166.3 64.9l-67.5 64.9C258.5 52.6 94.3 116.6 94.3 256c0 86.5 69.1 156.6 153.7 156.6 98.2 0 135-70.4 140.8-106.9H248v-85.3h236.1c2.3 12.7 3.9 24.9 3.9 41.4"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+      <div class="md-progress" data-md-component="progress" role="progressbar"></div>
+    
+    
+    <script id="__config" type="application/json">{"base": "../../../../..", "features": ["announce.dismiss", "content.action.edit", "content.action.view", "content.code.annotate", "content.code.copy", "content.code.select", "content.footnote.tooltips", "content.tabs.link", "content.tooltips", "header.autohide", "navigation.expand", "navigation.footer", "navigation.indexes", "navigation.instant", "navigation.instant.prefetch", "navigation.instant.progress", "navigation.prune", "navigation.top", "navigation.tabs", "navigation.tabs.sticky", "navigation.tracking", "search.highlight", "search.share", "search.suggest", "toc.follow"], "search": "../../../../../assets/javascripts/workers/search.6ce7567c.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    
+    
+      <script src="../../../../../assets/javascripts/bundle.88dd0f4e.min.js"></script>
+      
+        <script src="../../../../../javascripts/mathjax.js"></script>
+      
+        <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      
+    
+  </body>
+</html>
